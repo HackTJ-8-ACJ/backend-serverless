@@ -1,0 +1,44 @@
+service: lots-api
+frameworkVersion: ^2.8.0
+
+custom:
+  sstApp: dev-parkalot-infra
+
+plugins:
+  - serverless-bundle
+  - serverless-offline
+
+package:
+  individually: true
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: us-east-1
+
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:GetItem
+      Resource: !ImportValue '${self:custom.sstApp}-lots-table-arn'
+  
+  environment:
+    lotsTableName: !ImportValue '${self:custom.sstApp}-lots-table-name'
+
+functions:
+  createLot:
+    handler: ./handlers/lot.create
+    events:
+      - httpApi:
+          path: /lot
+          method: post
+
+  updateLot:
+    handler: ./handlers/lot.update
+    events:
+      - httpApi:
+          path: /lot/{lotId}
+          method: patch
